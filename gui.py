@@ -455,8 +455,8 @@ class ImageViewer(QMainWindow):
     # function for the labeling
     def add_landmark(self, coords, index):
         if index in self.landmark:
-            if len(self.landmark[index]) == 5:
-                self.show_warning("Warning", "You already have 5 landmarks.")
+            if len(self.landmark[index]) == 7:
+                self.show_warning("Warning", "You already have 7 landmarks.")
                 return
             self.landmark[index].append(coords)
         else:

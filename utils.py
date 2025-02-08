@@ -72,10 +72,12 @@ class ClickableLabelBeta(QLabel):
 
                 # pen = QPen(QColor(255, 0, 0))  # 빨간색 점
                 pen = QPen(QColor(*color_list[i]))  # 빨간색 점
-                pen.setWidth(5)
+                pen.setWidth(3)
                 painter.setPen(pen)
                 painter.drawPoint(point[0], point[1])  # 저장된 좌표에 점 찍기
                 painter.drawText(point[0], point[1] - 5, str(i + 1))
+                if i == 6:
+                    painter.drawRect(points[5][0], points[5][1], points[6][0]-points[5][0], points[6][1]-points[5][1])
 
             painter.end()
         self.setPixmap(pixmap)  # 업데이트된 이미지 설정
