@@ -139,8 +139,12 @@ class ImageViewer(QMainWindow):
         export_menu.addAction(export_landmark_action)
 
         # shortcut
-        shortcut = QShortcut(QKeySequence("Ctrl+z"), self)
-        shortcut.activated.connect(self.remove_landmark)
+        undo = QShortcut(QKeySequence("Ctrl+z"), self)
+        undo.activated.connect(self.remove_landmark)
+        prev = QShortcut(QKeySequence("a"), self)
+        prev.activated.connect(self.prev_clicked)
+        next = QShortcut(QKeySequence("d"), self)
+        next.activated.connect(self.next_clicked)
 
     def open_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "이미지 폴더 선택")
