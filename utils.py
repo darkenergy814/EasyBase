@@ -12,13 +12,13 @@ def find_all_images(folder):
     주어진 폴더(및 하위 폴더)에서 이미지 파일을 재귀적으로 검색하고,
     중복을 제거한 후 정렬된 리스트로 반환합니다.
     """
-    valid_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
-    images = set()
-    for root, dirs, files in os.walk(folder):
-        for file in files:
-            if file.lower().endswith(valid_exts):
-                images.add(os.path.join(root, file))
-    return sorted(list(images))
+    folder_path = Path(folder)
+    valid_exts = {".png", ".jpg", ".jpeg", ".bmp", ".gif"}
+
+    images = {normalize_path(str(file.resolve())) for file in folder_path.rglob("*") if
+              file.suffix.lower() in valid_exts}
+
+    return sorted(images)
 
 
 def normalize_path(path):
