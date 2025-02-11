@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap, QKeySequence
 from PyQt5.QtCore import Qt, QDir
-from utils import find_all_images, normalize_path, ClickableLabel, ClickableLabelBeta
+from utils import find_all_images, normalize_path, ClickableLabel, ClickableLabelBeta, read_labels
 
 
 class ImageViewer(QMainWindow):
@@ -17,7 +17,7 @@ class ImageViewer(QMainWindow):
 
         self.setWindowTitle("이미지 뷰어")
         self.setGeometry(100, 100, 800, 600)
-        self.current_folder = ""
+        self.dataset_folder = ""
         self.image_list = []  # 현재 폴더 내 모든 이미지 경로 목록
 
         # 현재 선택된 이미지 인덱스 (단일 모드)
@@ -124,7 +124,7 @@ class ImageViewer(QMainWindow):
         # 메뉴 설정
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("file")
-        open_action = QAction("open root folder", self)
+        open_action = QAction("open dataset folder", self)
         open_action.triggered.connect(self.open_folder)
         file_menu.addAction(open_action)
 
@@ -138,6 +138,13 @@ class ImageViewer(QMainWindow):
         export_landmark_action.triggered.connect(self.export_landmark)
         export_menu.addAction(export_landmark_action)
 
+        # import
+        import_menu = file_menu.addMenu("Import")
+        self.import_landmark_action = QAction("landmarks", self)
+        self.import_landmark_action.triggered.connect(self.import_landmark)
+        self.import_landmark_action.setEnabled(False)
+        import_menu.addAction(self.import_landmark_action)
+
         # shortcut
         undo = QShortcut(QKeySequence("Ctrl+z"), self)
         undo.activated.connect(self.remove_landmark)
@@ -149,7 +156,7 @@ class ImageViewer(QMainWindow):
     def open_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "이미지 폴더 선택")
         if folder:
-            self.current_folder = folder
+            self.dataset_folder = folder
             self.tree_view.show()  # 폴더 선택 시 트리 뷰 표시
             self.update_tree_view(folder)
             self.image_list = find_all_images(folder)
@@ -161,6 +168,7 @@ class ImageViewer(QMainWindow):
                 self.current_page = 0
                 self.grid_toggle_btn.show()
                 self.nav_widget.show()
+                self.import_landmark_action.setEnabled(True)
             else:
                 self.grid_toggle_btn.hide()
                 self.nav_widget.hide()
@@ -468,22 +476,35 @@ class ImageViewer(QMainWindow):
             self.update_right_view()
 
     def export_landmark(self):
-        output_folder = QFileDialog.getExistingDirectory(self, "select output folder", self.current_folder)
-
+        output_folder = QFileDialog.getExistingDirectory(self, "select output folder", self.dataset_folder)
         try:
-            for index in self.landmark:
-                if len(self.landmark[index]) != 0:
-                    image_path = normalize_path(self.image_list[index])
-                    extender = image_path.split('.')[-1]
-                    save_path = image_path.replace(normalize_path(self.current_folder), output_folder).replace(extender, 'txt')
+            if output_folder:
+                for index in self.landmark:
+                    if len(self.landmark[index]) != 0:
+                        image_path = normalize_path(self.image_list[index])
+                        extender = image_path.split('.')[-1]
+                        save_path = image_path.replace(normalize_path(self.dataset_folder), output_folder).replace(extender, 'txt')
 
-                    # 저장할 폴더가 존재하지 않으면 생성
-                    save_dir = os.path.dirname(save_path)
-                    if not os.path.exists(save_dir):
-                        os.makedirs(save_dir)
+                        # 저장할 폴더가 존재하지 않으면 생성
+                        save_dir = os.path.dirname(save_path)
+                        if not os.path.exists(save_dir):
+                            os.makedirs(save_dir)
 
-                    with open(save_path, "w", encoding="utf-8") as file:  # 'a' 모드: 기존 파일에 내용 추가
-                        file.write(' '.join(f"{x} {y}" for x, y in self.landmark[index]) + '\n')
-            QMessageBox.information(self, "Success", "The File successfully saved!")
+                        with open(save_path, "w", encoding="utf-8") as file:  # 'a' 모드: 기존 파일에 내용 추가
+                            file.write(' '.join(f"{x} {y}" for x, y in self.landmark[index]) + '\n')
+                QMessageBox.information(self, "Success", "The File successfully saved!")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error saving file: {e}")
+
+    def import_landmark(self):
+        landmark_path = QFileDialog.getExistingDirectory(None, "select label root folder", self.dataset_folder, QFileDialog.ShowDirsOnly)
+        if landmark_path:
+            landmark_paths = read_labels(landmark_path, self.dataset_folder)
+            for path in landmark_paths.keys():
+                try:
+                    index = self.image_list.index(path)
+                    self.landmark[index] = landmark_paths[path]
+
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Error loading label: {e}")
+            QMessageBox.information(self, "Success", "The landmarks are successfully loaded!")

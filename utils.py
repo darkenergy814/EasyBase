@@ -3,6 +3,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
 from PyQt5.QtWidgets import QLabel
 import time
+from pathlib import Path
 
 from static.landmark_color import color_list
 
@@ -26,6 +27,30 @@ def normalize_path(path):
     경로를 os.path.normpath와 os.path.normcase를 사용하여 정규화합니다.
     """
     return os.path.normcase(os.path.normpath(path))
+
+
+def read_labels(root, dataset_path):
+    root_path = Path(root)
+    file_data = {}
+
+    for file in root_path.rglob(f'*.txt'):
+        try:
+            # print(str(file.resolve()))
+            # 파일 읽기
+            content = file.read_text(encoding="utf-8").strip()
+            # 공백으로 구분된 숫자들을 리스트로 변환
+            numbers = list(map(int, content.split()))
+            numbers = list(zip(numbers[::2], numbers[1::2]))
+
+            # 파일 경로를 key로 저장
+            name = str(file.resolve())
+            name = name.replace(str(Path(root)), str(Path(dataset_path)))
+            name = normalize_path(str(Path(name).with_suffix(".png")))
+            file_data[name] = numbers
+        except Exception as e:
+            print(f"파일 {file} 읽기 오류: {e}")
+
+    return file_data
 
 
 class ClickableLabel(QLabel):
