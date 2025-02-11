@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QKeySequence
 from PyQt5.QtCore import Qt, QDir
 from utils import find_all_images, normalize_path, ClickableLabel, ClickableLabelBeta, read_labels
-
+from static import *
 
 class ImageViewer(QMainWindow):
     def __init__(self):
@@ -146,12 +146,11 @@ class ImageViewer(QMainWindow):
         import_menu.addAction(self.import_landmark_action)
 
         # shortcut
-        undo = QShortcut(QKeySequence("Ctrl+z"), self)
-        undo.activated.connect(self.remove_landmark)
-        prev = QShortcut(QKeySequence("a"), self)
-        prev.activated.connect(self.prev_clicked)
-        next = QShortcut(QKeySequence("d"), self)
-        next.activated.connect(self.next_clicked)
+        for keys, function_name in shortcut_map.values():
+            function = getattr(self, function_name)
+            for key in keys:
+                shortcut = QShortcut(QKeySequence(key), self)
+                shortcut.activated.connect(function)
 
     def open_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "이미지 폴더 선택")

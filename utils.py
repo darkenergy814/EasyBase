@@ -1,11 +1,10 @@
 import os
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
 from PyQt5.QtWidgets import QLabel
-import time
 from pathlib import Path
 
-from static.landmark_color import color_list
+from static import color_list
 
 
 def find_all_images(folder):
