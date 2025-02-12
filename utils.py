@@ -51,6 +51,10 @@ def read_labels(root, dataset_path):
 
     return file_data
 
+def read_checked_list(root, dataset_path):
+    root_path = Path(root)
+    file_data = []
+
 
 class ClickableLabel(QLabel):
     def __init__(self, parent=None):

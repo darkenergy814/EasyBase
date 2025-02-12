@@ -32,8 +32,8 @@ class ImageViewer(QMainWindow):
         self.checked = []
         self.landmark = {}
 
-        # 체크박스로 선택된 이미지 리스트
         self._init_ui()
+        self._init_shortcut()
 
     def _init_ui(self):
         # 중앙 위젯 및 메인 레이아웃 (QSplitter 사용)
@@ -140,17 +140,27 @@ class ImageViewer(QMainWindow):
 
         # import
         import_menu = file_menu.addMenu("Import")
+
+        self.import_check_list_action = QAction("check list", self)
+        self.import_check_list_action.triggered.connect(self.import_checked_list)
+        self.import_check_list_action.setEnabled(False)
+        import_menu.addAction(self.import_check_list_action)
+
         self.import_landmark_action = QAction("landmarks", self)
         self.import_landmark_action.triggered.connect(self.import_landmark)
         self.import_landmark_action.setEnabled(False)
         import_menu.addAction(self.import_landmark_action)
 
+    def _init_shortcut(self):
         # shortcut
         for keys, function_name in shortcut_map.values():
-            function = getattr(self, function_name)
-            for key in keys:
-                shortcut = QShortcut(QKeySequence(key), self)
-                shortcut.activated.connect(function)
+            try:
+                function = getattr(self, function_name)
+                for key in keys:
+                    shortcut = QShortcut(QKeySequence(key), self)
+                    shortcut.activated.connect(function)
+            except Exception as e:
+                self.show_warning('warning', f'Shortcut  error.\n{e}')
 
     def open_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "이미지 폴더 선택")
@@ -168,6 +178,7 @@ class ImageViewer(QMainWindow):
                 self.grid_toggle_btn.show()
                 self.nav_widget.show()
                 self.import_landmark_action.setEnabled(True)
+                self.import_check_list_action.setEnabled(True)
             else:
                 self.grid_toggle_btn.hide()
                 self.nav_widget.hide()
@@ -303,17 +314,17 @@ class ImageViewer(QMainWindow):
                 single_image_layout.setContentsMargins(0, 0, 0, 0)
 
                 # 🔹 체크박스 (오른쪽 상단에 배치)
-                checkbox = QCheckBox()
-                checkbox.setStyleSheet("QCheckBox { background: white; }")
+                self.checkbox = QCheckBox()
+                self.checkbox.setStyleSheet("QCheckBox { background: white; }")
 
                 checkbox_layout = QHBoxLayout()
                 checkbox_layout.addStretch()
-                checkbox_layout.addWidget(checkbox)
+                checkbox_layout.addWidget(self.checkbox)
                 checkbox_layout.setContentsMargins(0, 0, 0, 0)
 
                 # 기존에 체크된 상태 반영 및 기능 연결
-                checkbox.setChecked(img_path in self.checked)
-                checkbox.stateChanged.connect(lambda state, path=img_path: self.checked_list(state, path))
+                self.checkbox.setChecked(img_path in self.checked)
+                self.checkbox.stateChanged.connect(lambda state, path=img_path: self.checked_list(state, path))
 
                 # 🔹 단일 이미지 QLabel
                 # single_image_label = QLabel()
@@ -406,6 +417,11 @@ class ImageViewer(QMainWindow):
     def show_warning(self, title, message):
         QMessageBox.warning(self, title, message, QMessageBox.Ok)
 
+    def toggle_checkbox(self):
+        if hasattr(self, 'checkbox') and self.checkbox is not None:
+            self.checkbox.setChecked(not self.checkbox.isChecked())
+
+    # function for the list
     def export_selected_images(self):
         """export selected file list to .txt file"""
         if not self.checked:
@@ -426,7 +442,6 @@ class ImageViewer(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Error saving file: {e}")
 
-    # function for the list
     def select_image(self, item):
         path = item.text()
         self.current_index = self.image_list.index(path)
@@ -458,6 +473,10 @@ class ImageViewer(QMainWindow):
             remove_action.triggered.connect(lambda: self.remove_checked_item(item))
             menu.addAction(remove_action)
             menu.exec_(self.checked_list_widget.viewport().mapToGlobal(position))
+
+    def import_checked_list(self):
+        file_path = QFileDialog.getOpenFileName(None, "select checked list file", self.dataset_folder)
+        print(self.checked)
 
     # function for the labeling
     def add_landmark(self, coords, index):
